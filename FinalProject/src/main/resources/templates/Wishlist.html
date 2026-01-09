@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BookStore - Wishlist</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .wishlist-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        background: white;
+        height: 100%;
+      }
+      .wishlist-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+      }
+      .book-image-wishlist {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+      .wishlist-card:hover .book-image-wishlist {
+        transform: scale(1.05);
+      }
+      .btn-wishlist-add {
+        background: var(--primary-gradient);
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        color: white;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+      }
+      .btn-wishlist-add:hover {
+        transform: scale(1.1) translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+      }
+      .btn-wishlist-remove {
+        background: #ff6b6b;
+        border: none;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        color: white;
+        margin-top: 8px;
+      }
+      .rating-stars {
+        color: #ffc107;
+        font-size: 1.1rem;
+      }
+      .price-section {
+        background: linear-gradient(135deg, #f8f9ff 0%, #e8f0fe 100%);
+        border-radius: 16px;
+        padding: 20px;
+      }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- NAVBAR -->
+    <nav
+      class="navbar navbar-expand-lg navbar-dark"
+      style="
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+      "
+    >
+      <div class="container">
+        <a
+          class="navbar-brand fw-bold fs-3 me-4 p-2 rounded-pill"
+          th:href="@{/}"
+          style="background: rgba(255, 255, 255, 0.2); color: white"
+        >
+          <i class="fas fa-book-open-reader me-2 text-warning"></i>BookStore
+        </a>
+        <button
+          class="navbar-toggler bg-white text-primary border-0 rounded px-3 py-1 me-3 shadow"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <i class="fas fa-bars fs-5"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a
+                class="nav-link px-4 py-2 rounded-pill mx-1 text-white fw-semibold border border-white"
+                th:href="@{/}"
+                >Home</a
+              >
+            </li>
+          </ul>
+          <ul class="navbar-nav" th:if="${user != null}">
+            <li class="nav-item dropdown">
+              <a class="nav-link p-0 icon-btn dropdown-toggle" href="#" data-bs-toggle="dropdown" style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); color: white; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-user-circle fs-4"></i>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0 mt-2" style="border-radius: 15px">
+                <li class="px-4 py-3 border-bottom bg-light">
+                  <h6 class="fw-bold mb-1" th:text="${user.username}">John Doe</h6>
+                  <small class="text-muted" th:text="${user.email}">john@email.com</small>
+                </li>
+                <li><a class="dropdown-item py-3 px-4" th:href="@{/profile}"><i class="fas fa-user me-3 text-primary"></i>Profile</a></li>
+                <li><a class="dropdown-item py-3 px-4" th:href="@{/orders}"><i class="fas fa-box me-3 text-success"></i>Orders</a></li>
+                <li><hr class="my-0 mx-3" /></li>
+                <li><a class="dropdown-item text-danger py-3 px-4 fw-bold" th:href="@{/logout}"><i class="fas fa-sign-out-alt me-3"></i>Logout</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="py-5 py-lg-6">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+          <div>
+            <h1 class="h2 fw-bold mb-1">
+              <i class="fas fa-heart text-danger me-2"></i>My Wishlist
+            </h1>
+            <p class="text-muted mb-0">Books you've saved for later</p>
+          </div>
+          <a th:href="@{/}" class="btn btn-outline-primary">
+            <i class="fas fa-plus me-2"></i>Browse More
+          </a>
+        </div>
+
+        <!-- Login Required -->
+        <div class="text-center py-5" th:if="${user == null}">
+          <i class="fas fa-heart fa-5x text-muted mb-4"></i>
+          <h3 class="text-muted">Please Login to View Wishlist</h3>
+          <a th:href="@{/login}" class="btn btn-primary btn-lg mt-3">
+            <i class="fas fa-sign-in-alt me-2"></i>Login
+          </a>
+        </div>
+
+        <!-- Empty Wishlist -->
+        <div class="empty-wishlist text-center py-5" th:if="${user != null and #lists.isEmpty(wishlistItems)}">
+          <i class="fas fa-heart-broken fa-5x text-muted mb-4"></i>
+          <h3 class="text-muted">Your Wishlist is Empty</h3>
+          <p class="text-muted">Save your favorite books for later!</p>
+          <a th:href="@{/}" class="btn btn-primary btn-lg">
+            <i class="fas fa-book me-2"></i>Browse Books
+          </a>
+        </div>
+
+        <!-- Wishlist Items from Database -->
+        <div class="row g-4 mb-5" id="wishlistItems" th:if="${user != null and not #lists.isEmpty(wishlistItems)}">
+          <div class="col-xl-3 col-lg-4 col-md-6" th:each="wishlistItem : ${wishlistItems}">
+            <div class="wishlist-card position-relative h-100">
+              <img
+                class="book-image-wishlist"
+                alt="Book"
+                th:if="${wishlistItem.product != null}"
+                th:src="${wishlistItem.product != null and wishlistItem.product.imageUrl != null and wishlistItem.product.imageUrl != '' ? wishlistItem.product.imageUrl : 'https://via.placeholder.com/400x300'}"
+              />
+              <div class="p-4" th:if="${wishlistItem.product != null}">
+                <h5 class="fw-bold mb-1" th:text="${wishlistItem.product.name}">Product Name</h5>
+                <p class="text-muted mb-1 small" th:text="${wishlistItem.product.description != null ? #strings.abbreviate(wishlistItem.product.description, 50) : 'No description'}">Description</p>
+                <div class="rating-stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star-half-alt"></i>
+                </div>
+                <div class="price-section mt-3">
+                  <div class="h5 fw-bold text-primary mb-1" th:text="'$' + ${wishlistItem.product.price}">$0.00</div>
+                  <span class="badge" 
+                        th:classappend="${wishlistItem.product.stock > 0} ? 'bg-success' : 'bg-danger'"
+                        th:text="${wishlistItem.product.stock > 0} ? 'In Stock' : 'Out of Stock'">In Stock</span>
+                </div>
+                <div class="mt-3">
+                  <form th:action="@{/cart/add}" method="post">
+                    <input type="hidden" name="productId" th:value="${wishlistItem.product.id}" />
+                    <button type="submit" class="btn btn-success w-100">
+                      <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                    </button>
+                  </form>
+                  <a th:href="@{/wishlist/remove/{id}(id=${wishlistItem.product.id})}" class="btn btn-wishlist-remove w-100 mt-2">
+                    <i class="fas fa-trash"></i> Remove
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="row" th:if="${user != null and not #lists.isEmpty(wishlistItems)}">
+          <div class="col-md-3 mb-4">
+            <div class="text-center p-5 bg-white rounded-3 shadow-sm border-start border-primary border-5">
+              <i class="fas fa-heart fa-4x text-danger mb-3"></i>
+              <h3 class="fw-bold text-danger mb-2" th:text="${wishlistCount}">0</h3>
+              <p class="text-muted mb-0 h6">Total Wishlist Items</p>
+            </div>
+          </div>
+          <div class="col-md-9 mb-4">
+            <div class="bg-white rounded-3 shadow-sm p-4 h-100 d-flex align-items-center">
+              <div>
+                <h6 class="fw-bold text-primary mb-2">💡 Quick Tip</h6>
+                <p class="text-muted mb-3">
+                  Add your favorite books to cart directly from wishlist. Start browsing to find amazing books!
+                </p>
+                <a th:href="@{/}" class="btn btn-outline-primary">
+                  <i class="fas fa-book me-2"></i>Browse Books
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5 mt-auto">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <h5 class="fw-bold mb-3">📚 BookStore</h5>
+            <p class="text-white-50">Your premier online bookstore serving readers across India.</p>
+          </div>
+          <div class="col-md-4 mb-4">
+            <h6 class="fw-bold mb-3">Quick Links</h6>
+            <ul class="list-unstyled">
+              <li><a th:href="@{/}" class="text-white-50 text-decoration-none">Home</a></li>
+            </ul>
+          </div>
+          <div class="col-md-4">
+            <h6 class="fw-bold mb-3">Contact</h6>
+            <p class="text-white-50 mb-1">📧 info@bookstore.com</p>
+            <p class="text-white-50">📱 +91 98765 43210</p>
+          </div>
+        </div>
+        <hr class="my-3 opacity-25" />
+        <div class="text-center">
+          <p class="mb-0 text-white-50">&copy; 2026 BookStore. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
+

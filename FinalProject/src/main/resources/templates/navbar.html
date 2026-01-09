@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navbar Fragment</title>
+</head>
+<body>
+    <!-- Navbar Fragment -->
+    <nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-lg" 
+         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; position: sticky !important; top: 0 !important; z-index: 1020 !important;">
+        <div class="container-fluid">
+            <!-- Logo -->
+            <a class="navbar-brand fw-bold fs-3 d-flex align-items-center text-white p-2 rounded-pill" 
+               th:href="@{/}" 
+               style="text-decoration: none !important; background: rgba(255,255,255,0.15) !important; backdrop-filter: blur(10px);">
+                <i class="fas fa-book-open-reader fs-2 me-2 text-warning"></i>
+                <span class="fs-4">📚 BookStore</span>
+            </a>
+
+            <!-- Toggler -->
+            <button class="navbar-toggler bg-white text-primary border-0 rounded px-3 py-2 shadow-sm me-2" 
+                    type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="fas fa-bars fs-5"></i>
+            </button>
+
+            <!-- Collapsible Content -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Left Links -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item mx-1">
+                        <a class="nav-link active px-4 py-3 rounded-pill fs-5 fw-semibold mx-1" 
+                           th:href="@{/}" 
+                           style="color: rgba(255,255,255,0.95) !important; background: rgba(255,255,255,0.1) !important;">
+                            <i class="fas fa-home me-2"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item mx-1">
+                        <a class="nav-link px-4 py-3 rounded-pill fs-5 fw-semibold mx-1" 
+                           th:href="@{/about}" 
+                           style="color: rgba(255,255,255,0.95) !important; background: rgba(255,255,255,0.1) !important;">
+                            <i class="fas fa-info-circle me-2"></i>About
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Search Bar -->
+                <form th:action="@{/search}" method="get" class="d-flex me-4 flex-grow-1" role="search" style="max-width: 400px;">
+                    <div class="input-group rounded-pill shadow-lg overflow-hidden" style="background: rgba(255,255,255,0.95) !important;">
+                        <input class="form-control border-0 py-3 px-4 fs-6 fw-medium" 
+                               type="search" name="query" 
+                               placeholder="Search books..." style="background: transparent !important; border: none !important;">
+                        <button class="btn btn-primary px-4 py-3 shadow-none border-0 fw-bold" 
+                                type="submit" 
+                                style="background: linear-gradient(45deg, #ff6b6b, #feca57) !important; border-radius: 0 50px 50px 0 !important;">
+                            <i class="fas fa-search fs-5"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Right Icons -->
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <!-- Wishlist -->
+                    <li class="nav-item mx-2 position-relative">
+                        <a class="nav-link p-3 rounded-circle d-flex align-items-center justify-content-center" 
+                           th:href="@{/wishlist}" 
+                           style="width: 55px; height: 55px; background: rgba(255,255,255,0.15) !important; border: 2px solid rgba(255,255,255,0.3) !important; color: white !important;">
+                            <i class="fas fa-heart fs-4"></i>
+                        </a>
+                    </li>
+
+                    <!-- Cart -->
+                    <li class="nav-item mx-2 position-relative">
+                        <a class="nav-link p-3 rounded-circle d-flex align-items-center justify-content-center" 
+                           th:href="@{/cart}" 
+                           style="width: 55px; height: 55px; background: rgba(255,255,255,0.15) !important; border: 2px solid rgba(255,255,255,0.3) !important; color: white !important;">
+                            <i class="fas fa-shopping-cart fs-4"></i>
+                        </a>
+                    </li>
+
+                    <!-- User Menu -->
+                    <li class="nav-item dropdown mx-1" th:if="${user != null}">
+                        <a class="nav-link p-3 rounded-circle d-flex align-items-center justify-content-center dropdown-toggle" 
+                           href="#" role="button" data-bs-toggle="dropdown" 
+                           style="width: 55px; height: 55px; background: rgba(255,255,255,0.15) !important; border: 2px solid rgba(255,255,255,0.3) !important; color: white !important;">
+                            <i class="fas fa-user-circle fs-4"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0 mt-2" 
+                             style="min-width: 200px !important; border-radius: 15px !important;">
+                            <div class="px-4 py-3 border-bottom">
+                                <h6 class="fw-bold mb-0" th:text="${user.username}">User Name</h6>
+                                <small class="text-muted" th:text="${user.email}">user@email.com</small>
+                            </div>
+                            <a class="dropdown-item px-4 py-3" th:href="@{/profile}">
+                                <i class="fas fa-user me-3 text-primary"></i><span class="fw-semibold">Profile</span>
+                            </a>
+                            <a class="dropdown-item px-4 py-3" th:href="@{/orders}">
+                                <i class="fas fa-box me-3 text-success"></i><span class="fw-semibold">Orders</span>
+                            </a>
+                            <hr class="mx-3 my-0">
+                            <a class="dropdown-item px-4 py-3 text-danger fw-bold" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-3"></i><span>Logout</span>
+                            </a>
+                        </div>
+                    </li>
+
+                    <!-- Login Button -->
+                    <li class="nav-item mx-1" th:if="${user == null}">
+                        <a class="nav-link px-4 py-3 rounded-pill fw-semibold text-white border border-white" 
+                           th:href="@{/login}"
+                           style="background: rgba(255,255,255,0.1) !important;">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <style th:inline="css">
+        /* Additional styles for navbar */
+        .navbar .nav-link:hover {
+            transform: translateY(-3px) scale(1.05) !important;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
+        }
+        
+        .navbar-brand:hover {
+            transform: scale(1.08) !important;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+        }
+
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                background: rgba(0,0,0,0.95) !important;
+                margin-top: 15px !important;
+                border-radius: 20px !important;
+                padding: 25px !important;
+            }
+        }
+    </style>
+</body>
+</html>
+
