@@ -37,6 +37,12 @@ public class WebController {
     private WishlistService wishlistService;
 
     @Autowired
+    private OTPService otpService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
     private ResourceLoader resourceLoader;
 
     // ============ SESSION MANAGEMENT ============
@@ -206,6 +212,22 @@ public class WebController {
             return "Signup";
         }
         
+        // Check if email verification is required and completed
+        Boolean emailVerified = (Boolean) session.getAttribute("emailVerified");
+        if (emailVerified == null || !emailVerified) {
+            model.addAttribute("error", "Please verify your email with OTP before signing up.");
+            return "Signup";
+        }
+        
+        // Check if phone verification is required and completed (if phone provided)
+        if (phone != null && !phone.trim().isEmpty()) {
+            Boolean phoneVerified = (Boolean) session.getAttribute("phoneVerified");
+            if (phoneVerified == null || !phoneVerified) {
+                model.addAttribute("error", "Please verify your phone number with OTP before signing up.");
+                return "Signup";
+            }
+        }
+        
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
@@ -237,7 +259,20 @@ public class WebController {
         userService.saveUser(user);
         setLoggedInUser(session, user);
         
-        System.out.println("User registered: " + username + " with photo: " + user.getProfilePhoto());
+        // Clear OTP verification session attributes
+        session.removeAttribute("emailVerified");
+        session.removeAttribute("phoneVerified");
+        session.removeAttribute("pendingEmail");
+        session.removeAttribute("pendingPhone");
+        
+        System.out.println("✅ User registered: " + username + " with photo: " + user.getProfilePhoto());
+        
+        // Send welcome email
+        try {
+            emailService.sendWelcomeEmail(email, username);
+        } catch (Exception e) {
+            System.err.println("Failed to send welcome email: " + e.getMessage());
+        }
         
         return "redirect:/home";
     }
@@ -556,9 +591,23 @@ public class WebController {
         }
         
         List<Order> orders = orderService.getOrdersByUserId(user.getId());
+        
+        // Calculate dynamic statistics
+        long shippedCount = orders.stream().filter(o -> "SHIPPED".equals(o.getStatus())).count();
+        long processingCount = orders.stream().filter(o -> "PROCESSING".equals(o.getStatus())).count();
+        long deliveredCount = orders.stream().filter(o -> "DELIVERED".equals(o.getStatus())).count();
+        BigDecimal totalSpent = orders.stream()
+                .filter(o -> "DELIVERED".equals(o.getStatus()))
+                .map(Order::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
         model.addAttribute("user", user);
         model.addAttribute("orders", orders);
         model.addAttribute("cartCount", cartService.getCartItemCount(user.getId()));
+        model.addAttribute("shippedCount", shippedCount);
+        model.addAttribute("processingCount", processingCount);
+        model.addAttribute("deliveredCount", deliveredCount);
+        model.addAttribute("totalSpent", totalSpent);
         return "Orders";
     }
 
@@ -590,6 +639,7 @@ public class WebController {
         model.addAttribute("products", productService.getAllProducts());
         model.addAttribute("orders", orderService.getAllOrders());
         model.addAttribute("users", userService.getAllUsers());
+        model.addAttribute("totalRevenue", orderService.getTotalRevenue());
         return "Admin";
     }
 
@@ -731,5 +781,124 @@ public class WebController {
             model.addAttribute("cartCount", cartService.getCartItemCount(user.getId()));
         }
         return "Index";
+    }
+
+    // ============ OTP VERIFICATION ============
+
+    /**
+     * Send OTP to email
+     */
+    @PostMapping("/send-email-otp")
+    @ResponseBody
+    public Map<String, Object> sendEmailOTP(@RequestParam String email, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        // Check if email is already registered
+        if (userService.findByEmail(email) != null) {
+            response.put("success", false);
+            response.put("message", "Email is already registered.");
+            return response;
+        }
+        
+        // Generate and send OTP
+        String otp = otpService.generateOTP();
+        otpService.sendOTPToEmail(email, otp);
+        
+        // Store pending email in session
+        session.setAttribute("pendingEmail", email);
+        
+        response.put("success", true);
+        response.put("message", "OTP sent to your email. Please check your inbox.");
+        return response;
+    }
+
+    /**
+     * Send OTP to phone
+     */
+    @PostMapping("/send-phone-otp")
+    @ResponseBody
+    public Map<String, Object> sendPhoneOTP(@RequestParam String phone, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        // Validate phone format
+        if (phone == null || !phone.matches("^[0-9]{10}$")) {
+            response.put("success", false);
+            response.put("message", "Please enter a valid 10-digit phone number.");
+            return response;
+        }
+        
+        // Generate and send OTP
+        String otp = otpService.generateOTP();
+        otpService.sendOTPToPhone(phone, otp);
+        
+        // Store pending phone in session
+        session.setAttribute("pendingPhone", phone);
+        
+        response.put("success", true);
+        response.put("message", "OTP sent to your phone via SMS.");
+        return response;
+    }
+
+    /**
+     * Verify OTP
+     */
+    @PostMapping("/verify-otp")
+    @ResponseBody
+    public Map<String, Object> verifyOTP(@RequestParam String otp, 
+                                          @RequestParam String type,
+                                          HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        String key = type.equals("email") ? 
+            (String) session.getAttribute("pendingEmail") : 
+            (String) session.getAttribute("pendingPhone");
+        
+        if (key == null) {
+            response.put("success", false);
+            response.put("message", "No pending OTP found. Please request a new OTP.");
+            return response;
+        }
+        
+        OTPService.OTPVerificationResult result = otpService.verifyOTP(key, otp);
+        
+        if (result.isSuccess()) {
+            // Mark as verified in session
+            if (type.equals("email")) {
+                session.setAttribute("emailVerified", true);
+                session.removeAttribute("pendingEmail");
+            } else {
+                session.setAttribute("phoneVerified", true);
+                session.removeAttribute("pendingPhone");
+            }
+            response.put("success", true);
+            response.put("message", result.getMessage());
+        } else {
+            response.put("success", false);
+            response.put("message", result.getMessage());
+        }
+        
+        return response;
+    }
+
+    /**
+     * Check if email is verified
+     */
+    @GetMapping("/check-email-verified")
+    @ResponseBody
+    public Map<String, Object> checkEmailVerified(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("verified", Boolean.TRUE.equals(session.getAttribute("emailVerified")));
+        return response;
+    }
+
+    /**
+     * Check if phone is verified
+     */
+    @GetMapping("/check-phone-verified")
+    @ResponseBody
+    public Map<String, Object> checkPhoneVerified(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("verified", Boolean.TRUE.equals(session.getAttribute("phoneVerified")));
+        return response;
     }
 }

@@ -14,5 +14,11 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     void deleteByUserIdAndProductId(Long userId, Long productId);
     void deleteByUserId(Long userId);
     long countByUserId(Long userId);
+    
+    /**
+     * Delete all cart items associated with a specific product.
+     * This is used when deleting a product to prevent foreign key constraint violations.
+     */
+    void deleteByProductId(Long productId);
 }
 

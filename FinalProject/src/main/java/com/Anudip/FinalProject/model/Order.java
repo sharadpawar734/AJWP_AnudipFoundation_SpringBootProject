@@ -1,6 +1,7 @@
 package com.Anudip.FinalProject.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,7 +19,13 @@ public class Order {
     private User user;
 
     private LocalDateTime orderDate;
+
+    @NotNull(message = "Total amount is required")
+    @DecimalMin(value = "0.01", message = "Total amount must be greater than 0")
     private BigDecimal totalAmount;
+
+    @Pattern(regexp = "^(PENDING|PROCESSING|SHIPPED|DELIVERED|CANCELLED)$", 
+             message = "Status must be PENDING, PROCESSING, SHIPPED, DELIVERED, or CANCELLED")
     private String status;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -46,3 +53,4 @@ public class Order {
     public List<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }
 }
+

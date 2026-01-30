@@ -17,7 +17,8 @@ public class WishlistService {
     private WishlistRepository wishlistRepository;
 
     public List<Wishlist> getWishlistByUserId(Long userId) {
-        return wishlistRepository.findByUserId(userId);
+        // Use the optimized query with JOIN FETCH to eagerly load products
+        return wishlistRepository.findByUserIdWithProducts(userId);
     }
 
     public int getWishlistItemCount(Long userId) {

@@ -1,6 +1,7 @@
 package com.Anudip.FinalProject.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
 @Entity
@@ -13,14 +14,17 @@ public class OrderItem {
 
     @ManyToOne
     @JoinColumn(name = "order_id")
-    // Renamed from orderEntity to order to match the 'mappedBy' in Order.java
     private Order order;
 
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
 
+    @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
+
+    @NotNull(message = "Price is required")
+    @DecimalMin(value = "0.01", message = "Price must be greater than 0")
     private BigDecimal price;
 
     // Default Constructor
@@ -42,3 +46,4 @@ public class OrderItem {
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
 }
+

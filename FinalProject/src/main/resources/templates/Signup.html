@@ -127,44 +127,40 @@
             transform: translateY(-2px);
             box-shadow: 0 16px 32px rgba(102,126,234,0.4);
         }
-        .divider-custom {
-            position: relative;
-            text-align: center;
-            margin: 1.5rem 0;
-            color: #6c757d;
+        .btn-otp {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-weight: 600;
             font-size: 13px;
-        }
-        .divider-custom::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #dee2e6, transparent);
-        }
-        .divider-custom span {
-            background: var(--glass-bg);
-            padding: 0 16px;
-            position: relative;
-        }
-        .form-check-custom {
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            margin-bottom: 1rem;
+            color: white;
             transition: all 0.3s ease;
-            cursor: pointer;
-            background: white;
         }
-        .form-check-custom:hover {
-            border-color: #667eea;
+        .btn-otp:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(17,153,142,0.4);
+        }
+        .btn-otp:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .otp-verified {
+            color: #38ef7d;
+            font-size: 18px;
+        }
+        .otp-section {
             background: #f8f9ff;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 2px solid #e9ecef;
         }
-        .form-check-input-custom:checked {
-            background-color: #667eea;
-            border-color: #667eea;
-            transform: scale(1.1);
+        .otp-section.verified {
+            border-color: #38ef7d;
+            background: #f0fff4;
         }
         @media (max-width: 576px) {
             .form-content { padding: 1.5rem 1rem; }
@@ -186,9 +182,11 @@
 
             <!-- Form -->
             <div class="form-content">
-            <form id="signupForm" th:action="@{/signup}" method="post" enctype="multipart/form-data">
+                <form id="signupForm" th:action="@{/signup}" method="post" enctype="multipart/form-data">
                     <!-- Error Message -->
                     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+                    <!-- Success Message -->
+                    <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
 
                     <!-- Username -->
                     <div class="input-group-custom">
@@ -197,11 +195,26 @@
                         <input type="text" id="username" name="username" placeholder="Full Name *" autocomplete="name" required>
                     </div>
 
-                    <!-- Email -->
-                    <div class="input-group-custom">
-                        <i class="fas fa-envelope input-icon"></i>
-                        <label for="email" class="visually-hidden">Email Address</label>
-                        <input type="email" id="email" name="email" placeholder="Email Address *" autocomplete="email" required>
+                    <!-- Email with OTP -->
+                    <div class="otp-section" id="emailOtpSection">
+                        <div class="input-group-custom" style="margin-bottom: 0;">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <label for="email" class="visually-hidden">Email Address</label>
+                            <input type="email" id="email" name="email" placeholder="Email Address *" autocomplete="email" required>
+                            <button type="button" class="btn btn-otp position-absolute top-50 end-0 translate-middle-y me-3" id="sendEmailOtpBtn" onclick="sendEmailOTP()">
+                                <i class="fas fa-paper-plane me-1"></i>Send OTP
+                            </button>
+                        </div>
+                        <div id="emailOtpStatus" class="mt-2 text-center" style="display: none;"></div>
+                        <div id="emailOtpInput" class="mt-2" style="display: none;">
+                            <div class="input-group-custom" style="margin-bottom: 0;">
+                                <i class="fas fa-key input-icon"></i>
+                                <input type="text" id="emailOtp" placeholder="Enter OTP" maxlength="6" style="padding-left: 50px;">
+                                <button type="button" class="btn btn-otp position-absolute top-50 end-0 translate-middle-y me-3" onclick="verifyEmailOTP()">
+                                    Verify
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Password -->
@@ -214,11 +227,26 @@
                         </button>
                     </div>
 
-                    <!-- Phone -->
-                    <div class="input-group-custom">
-                        <i class="fas fa-phone input-icon"></i>
-                        <label for="phone" class="visually-hidden">Phone Number</label>
-                        <input type="tel" id="phone" name="phone" placeholder="Phone Number *" autocomplete="tel">
+                    <!-- Phone with OTP -->
+                    <div class="otp-section" id="phoneOtpSection">
+                        <div class="input-group-custom" style="margin-bottom: 0;">
+                            <i class="fas fa-phone input-icon"></i>
+                            <label for="phone" class="visually-hidden">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" placeholder="Phone Number (10 digits) *" autocomplete="tel">
+                            <button type="button" class="btn btn-otp position-absolute top-50 end-0 translate-middle-y me-3" id="sendPhoneOtpBtn" onclick="sendPhoneOTP()">
+                                <i class="fas fa-paper-plane me-1"></i>Send OTP
+                            </button>
+                        </div>
+                        <div id="phoneOtpStatus" class="mt-2 text-center" style="display: none;"></div>
+                        <div id="phoneOtpInput" class="mt-2" style="display: none;">
+                            <div class="input-group-custom" style="margin-bottom: 0;">
+                                <i class="fas fa-key input-icon"></i>
+                                <input type="text" id="phoneOtp" placeholder="Enter OTP" maxlength="6" style="padding-left: 50px;">
+                                <button type="button" class="btn btn-otp position-absolute top-50 end-0 translate-middle-y me-3" onclick="verifyPhoneOTP()">
+                                    Verify
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Address -->
@@ -296,7 +324,143 @@
         const toggleBtn = document.getElementById('togglePassword');
         const terms = document.getElementById('terms');
 
-        // Toggle password
+        // Email OTP functions
+        function sendEmailOTP() {
+            const email = document.getElementById('email').value;
+            if (!email || !email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            const btn = document.getElementById('sendEmailOtpBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+
+            fetch('/send-email-otp?email=' + encodeURIComponent(email), {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('emailOtpStatus');
+                const otpInput = document.getElementById('emailOtpInput');
+                
+                if (data.success) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                    otpInput.style.display = 'block';
+                    document.getElementById('email').readOnly = true;
+                } else {
+                    statusDiv.style.display = 'block';
+                    statusDiv.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-circle"></i> ' + data.message + '</span>';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Send OTP';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Send OTP';
+            });
+        }
+
+        function verifyEmailOTP() {
+            const otp = document.getElementById('emailOtp').value;
+            if (!otp || otp.length !== 6) {
+                alert('Please enter a valid 6-digit OTP');
+                return;
+            }
+
+            fetch('/verify-otp?otp=' + encodeURIComponent(otp) + '&type=email', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('emailOtpStatus');
+                const otpSection = document.getElementById('emailOtpSection');
+                
+                if (data.success) {
+                    statusDiv.innerHTML = '<span class="otp-verified"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                    otpSection.classList.add('verified');
+                    document.getElementById('emailOtpInput').style.display = 'none';
+                    document.getElementById('sendEmailOtpBtn').style.display = 'none';
+                } else {
+                    statusDiv.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-circle"></i> ' + data.message + '</span>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Phone OTP functions
+        function sendPhoneOTP() {
+            const phone = document.getElementById('phone').value;
+            if (!phone || !phone.match(/^[0-9]{10}$/)) {
+                alert('Please enter a valid 10-digit phone number');
+                return;
+            }
+
+            const btn = document.getElementById('sendPhoneOtpBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+
+            fetch('/send-phone-otp?phone=' + encodeURIComponent(phone), {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('phoneOtpStatus');
+                const otpInput = document.getElementById('phoneOtpInput');
+                
+                if (data.success) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                    otpInput.style.display = 'block';
+                    document.getElementById('phone').readOnly = true;
+                } else {
+                    statusDiv.style.display = 'block';
+                    statusDiv.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-circle"></i> ' + data.message + '</span>';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Send OTP';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Send OTP';
+            });
+        }
+
+        function verifyPhoneOTP() {
+            const otp = document.getElementById('phoneOtp').value;
+            if (!otp || otp.length !== 6) {
+                alert('Please enter a valid 6-digit OTP');
+                return;
+            }
+
+            fetch('/verify-otp?otp=' + encodeURIComponent(otp) + '&type=phone', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('phoneOtpStatus');
+                const otpSection = document.getElementById('phoneOtpSection');
+                
+                if (data.success) {
+                    statusDiv.innerHTML = '<span class="otp-verified"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                    otpSection.classList.add('verified');
+                    document.getElementById('phoneOtpInput').style.display = 'none';
+                    document.getElementById('sendPhoneOtpBtn').style.display = 'none';
+                } else {
+                    statusDiv.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-circle"></i> ' + data.message + '</span>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Toggle password visibility
         toggleBtn.addEventListener('click', () => {
             const type = password.type === 'password' ? 'text' : 'password';
             password.type = type;

@@ -39,6 +39,18 @@ public class OrderService {
         return orderRepository.findByUserIdWithItems(userId);
     }
 
+    /**
+     * Calculate total revenue from all delivered orders.
+     * Only orders with status 'DELIVERED' are counted as revenue.
+     */
+    public BigDecimal getTotalRevenue() {
+        List<Order> allOrders = orderRepository.findAllWithItems();
+        return allOrders.stream()
+                .filter(order -> "DELIVERED".equals(order.getStatus()))
+                .map(Order::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     @Transactional
     public Order createOrder(User user, List<OrderItem> orderItems, BigDecimal totalAmount) {
         Order order = new Order();
@@ -47,19 +59,14 @@ public class OrderService {
         order.setTotalAmount(totalAmount);
         order.setStatus("PENDING");
         
-        // First save order to get the ID
-        order = orderRepository.save(order);
-        
-        // Link order items to the order and save them
+        // FIRST: Link order items to the order BEFORE saving
+        // This ensures cascade will work properly
         for (OrderItem item : orderItems) {
             item.setOrder(order);
-            orderItemService.saveOrderItem(item);
         }
-        
-        // Set the order items list
         order.setOrderItems(orderItems);
         
-        // Save order again to persist the cascade
+        // Save order with cascade - this will save order items automatically
         order = orderRepository.save(order);
 
         return order;
